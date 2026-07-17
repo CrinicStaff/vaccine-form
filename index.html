@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>季節性ワクチン事前受付フォーム</title>
+    <style>
+        :root {
+            --primary-color: #007A78;
+            --error-color: #DE3618;
+            --bg-color: #F4F7F6;
+            --text-color: #2D3748;
+        }
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Segoe UI", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h1 {
+            font-size: 22px;
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        .note-top {
+            font-size: 13px;
+            text-align: center;
+            color: var(--error-color);
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .checkbox-label input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+        .sub-note {
+            font-size: 12px;
+            color: #666;
+            font-weight: normal;
+            margin-left: 5px;
+        }
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+        .input-col {
+            flex: 1;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #CBD5E0;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .error-message {
+            color: var(--error-color);
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 5px;
+            display: none;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background-color: #005A58;
+        }
+        .hidden {
+            display: none;
+        }
+        .confirm-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .confirm-table th, .confirm-table td {
+            padding: 12px;
+            border-bottom: 1px solid #E2E8F0;
+            text-align: left;
+        }
+        .confirm-table th {
+            width: 30%;
+            background-color: #F8FAFC;
+        }
+        .highlight-notice {
+            background-color: #FFF5F5;
+            border-left: 4px solid var(--error-color);
+            padding: 15px;
+            color: var(--error-color);
+            font-weight: bold;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 画面1: 入力フォーム -->
+    <div id="step-input">
+        <h1>【季節性ワクチン事前受付フォーム】</h1>
+        <div class="note-top">※本受付は予約の確保ではございません。ご注意ください。</div>
+        
+        <form id="vaccine-form" onsubmit="return false;">
+            <div class="form-group">
+                <label>ご希望のワクチン（複数選択可）</label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="vaccine" value="インフルエンザワクチン"> インフルエンザワクチン
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="vaccine" value="フルミスト点鼻液"> フルミスト点鼻液<span class="sub-note">（2歳以上18歳以下の方のみ）</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="vaccine" value="新型コロナワクチン"> 新型コロナワクチン
+                </label>
+                <div id="err-vaccine" class="error-message">ワクチンを少なくとも1つ選択してください。</div>
+            </div>
+
+            <div class="form-group">
+                <label>生年月日</label>
+                <div class="input-row">
+                    <div class="input-col">
+                        <input type="text" id="birth-year" placeholder="西暦(4桁)" maxlength="4">
+                    </div>
+                    <div class="input-col">
+                        <input type="text" id="birth-month" placeholder="月" maxlength="2">
+                    </div>
+                    <div class="input-col">
+                        <input type="text" id="birth-day" placeholder="日" maxlength="2">
+                    </div>
+                </div>
+                <div id="err-birthdate" class="error-message">生年月日を正しい西暦4桁・月・日（半角数字）で入力してください。</div>
+            </div>
+
+            <div class="form-group">
+                <label>氏名（フリガナ）</label>
+                <div class="input-row">
+                    <div class="input-col">
+                        <input type="text" id="last-name" placeholder="セイ（姓）">
+                    </div>
+                    <div class="input-col">
+                        <input type="text" id="first-name" placeholder="メイ（名）">
+                    </div>
+                </div>
+                <div id="err-name" class="error-message">氏名を半角カタカナで入力してください。</div>
+            </div>
+
+            <button type="button" class="btn" onclick="validateAndProceed()">内容確認ボタン</button>
+        </form>
+    </div>
+
+    <!-- 画面2: 確認画面 -->
+    <div id="step-confirm" class="hidden">
+        <h1>入力内容の確認</h1>
+        <p style="text-align: center; font-weight: bold;">内容をご確認いただき、よろしければ下部送信ボタンを押してください。</p>
+        
+        <table class="confirm-table">
+            <tr><th>希望ワクチン</th><td id="conf-vaccine"></td></tr>
+            <tr><th>生年月日</th><td id="conf-birthdate"></td></tr>
+            <tr><th>氏名(フリガナ)</th><td id="conf-name"></td></tr>
+        </table>
+
+        <button type="button" class="btn" id="submit-btn" onclick="submitData()">送信ボタン</button>
+        <button type="button" class="btn" style="background-color: #718096; margin-top: 10px;" onclick="backToInput()">修正する</button>
+    </div>
+
+    <!-- 画面3: 完了画面 -->
+    <div id="step-thanks" class="hidden">
+        <h1>ご入力ありがとうございます。</h1>
+        <p>ワクチン接種の受付を承りました。</p>
+        <div class="highlight-notice">
+            なお、本受付は予約ではございませんので、予めご了承下さい。
+        </div>
+    </div>
+</div>
+
+<script>
+    // GASで発行したウェブアプリのURLをここに貼り付けてください
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec";
+
+    // 全角英数字➔半角英数字、全角カタカナ➔半角カタカナの自動変換処理
+    function toHalfWidthNum(str) {
+        return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
+    }
+
+    function toHalfWidthKana(str) {
+        const kanaMap = {
+            'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン': 'ｱｲｳｴｵｶｷｸｹｺｻシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン',
+            'ガギグゲゴザジズゼゾダヂヅデドバビブベボ': 'ｶﾞｷﾞｸﾞｹﾞｺﾞｻﾞｼﾞｽﾞｾﾞｿﾞﾀﾞﾁﾞﾂﾞﾃﾞﾄﾞﾊﾞﾋﾞﾌﾞﾍﾞﾎﾞ',
+            'パピプペポ': 'ﾊﾟﾋﾟﾌﾟﾍﾟﾎﾟ', 'ァィゥェォッャュョ': 'ｧｨｩｪｫｯｬｭｮ', 'ー': 'ｰ', ' ': ' ', ' ': ' '
+        };
+        // 全角カタカナを半角にマッピングする簡易ロジック（利便性のため入力時に自動置換イベントを付与）
+        // 以下のinputイベントでリアルタイム処理を行います
+        return str; 
+    }
+
+    // リアルタイム文字変換フィルタの設定
+    document.getElementById('birth-year').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
+    document.getElementById('birth-month').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
+    document.getElementById('birth-day').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
+
+    // カナの自動変換（全角から半角）簡易実装
+    function zenkakuToHankakuKana(str) {
+        var zen = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ","ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メモ","ヤ","ユ","ヨ","ラ","リ","ル","レ","ロ","ワ","ヲ","ン","ァ","ィ","ゥ","ェ","ォ","ッ","ャ","ュ","ョ","ー","ガ","ギ","グ","ゲ","ゴ","ザ","ジ","ズ","ゼ","ゾ","ダ","ヂ","ヅ","デ","ド","バ","ビ","ブ","ベ","ボ","パ","ピ","プ","ペ","ポ"];
+        var han = ["ｱ","ｲ","ｳ","ｴ","ｵ","ｶ","ｷ","ｸ","ｹ","ｺ","ｻ","ｼ","ｽ","ｾ","ｿ","ﾀ","ﾁ","ﾂ","ｴ","ﾄ","ﾅ","ﾆ","ﾇ","ﾈ","ﾉ","ﾊ","ﾋ","ﾌ","ﾍ","ﾎ","ﾏ","ﾐ","ﾑ","ﾒ","ﾓ","ﾔ","ﾕ","ﾖ","ﾗ","ﾘ","ﾙ","ﾚ","ﾛ","ﾜ","ｦ","ﾝ","ｧ","ｨ","ｩ","ｪ","ｫ","ｯ","ｬ","ｭ","ｮ","ｰ","ｶﾞ","ｷﾞ","ｸﾞ","ｹﾞ","ｺﾞ","ｻﾞ","ｼﾞ","ｽﾞ","ｾﾞ","ｿﾞ","ﾀﾞ","ﾁﾞ","ﾂﾞ","ﾃﾞ","ﾄﾞ","ﾊﾞ","ﾋﾞ","ﾌﾞ","ﾍﾞ","ﾎﾞ","ﾊﾟ","ﾋﾟ","ﾌﾟ","ﾍﾟ","ﾎﾟ"];
+        for(let i=0; i<zen.length; i++){
+            let reg = new RegExp(zen[i], 'g');
+            str = str.replace(reg, han[i]);
+        }
+        // 英数字記号の排除、半角カナ以外を除去
+        return str.replace(/[^ｱ-ﾝﾟﾞｧ-ｫｯｬ-ｮｰ\s]/g, '');
+    }
+
+    const nameInputs = ['last-name', 'first-name'];
+    nameInputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', function(e) {
+            e.target.value = zenkakuToHankakuKana(e.target.value);
+        });
+    });
+
+    // バリデーションと画面遷移
+    function validateAndProceed() {
+        let isValid = true;
+
+        // 1. ワクチンチェック
+        const checkedVaccines = Array.from(document.querySelectorAll('input[name="vaccine"]:checked')).map(el => el.value);
+        if(checkedVaccines.length === 0) {
+            document.getElementById('err-vaccine').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('err-vaccine').style.display = 'none';
+        }
+
+        // 2. 生年月日チェック (空欄、および4桁未満の西暦エラー)
+        const year = document.getElementById('birth-year').value;
+        const month = document.getElementById('birth-month').value;
+        const day = document.getElementById('birth-day').value;
+        
+        if(!year || !month || !day || year.length < 4 || parseInt(year) < 1900 || parseInt(month) > 12 || parseInt(day) > 31) {
+            document.getElementById('err-birthdate').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('err-birthdate').style.display = 'none';
+        }
+
+        // 3. 氏名チェック (空欄)
+        const lastName = document.getElementById('last-name').value.strip ? document.getElementById('last-name').value.strip() : document.getElementById('last-name').value;
+        const firstName = document.getElementById('first-name').value.strip ? document.getElementById('first-name').value.strip() : document.getElementById('first-name').value;
+        if(!lastName || !firstName) {
+            document.getElementById('err-name').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('err-name').style.display = 'none';
+        }
+
+        if(!isValid) return;
+
+        // 確認画面に値をセットして遷移
+        document.getElementById('conf-vaccine').innerText = checkedVaccines.join(', ');
+        document.getElementById('conf-birthdate').innerText = `${year}年 ${month}月 ${day}日`;
+        document.getElementById('conf-name').innerText = `${lastName} ${firstName}`;
+
+        document.getElementById('step-input').classList.add('hidden');
+        document.getElementById('step-confirm').classList.remove('hidden');
+    }
+
+    function backToInput() {
+        document.getElementById('step-confirm').classList.add('hidden');
+        document.getElementById('step-input').classList.remove('hidden');
+    }
+
+    // GASへデータ送信
+    function submitData() {
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.innerText = "送信中...";
+        submitBtn.disabled = true;
+
+        const checkedVaccines = Array.from(document.querySelectorAll('input[name="vaccine"]:checked')).map(el => el.value);
+        const year = document.getElementById('birth-year').value;
+        const month = document.getElementById('birth-month').value.padStart(2, '0');
+        const day = document.getElementById('birth-day').value.padStart(2, '0');
+        
+        const payload = {
+            vaccines: checkedVaccines,
+            birthdate: `${year}/${month}/${day}`,
+            lastName: document.getElementById('last-name').value,
+            firstName: document.getElementById('first-name').value
+        };
+
+        // 非同期でGoogle Apps Scriptにデータを投げる
+        fetch(GAS_WEBAPP_URL, {
+            method: "POST",
+            mode: "no-cors", // 隔離・クロスドメイン対策
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            // 完了画面へ遷移
+            document.getElementById('step-confirm').classList.add('hidden');
+            document.getElementById('step-thanks').classList.remove('hidden');
+        }).catch(err => {
+            alert("通信エラーが発生しました。時間をおいて再度お試しください。");
+            submitBtn.innerText = "送信ボタン";
+            submitBtn.disabled = false;
+        });
+    }
+</script>
+</body>
+</html>

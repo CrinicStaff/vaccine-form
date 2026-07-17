@@ -177,7 +177,7 @@
                 <div id="err-vaccine" class="error-message">ワクチンを少なくとも1つ選択してください。</div>
             </div>
 
-            <!-- 追加：性別選択欄（チェックボックス形式） -->
+            <!-- 性別選択欄 -->
             <div class="form-group">
                 <label>性別</label>
                 <div class="gender-row">
@@ -195,13 +195,13 @@
                 <label>生年月日</label>
                 <div class="input-row">
                     <div class="input-col">
-                        <input type="text" id="birth-year" placeholder="西暦(4桁)" maxlength="4">
+                        <input type="text" id="birth-year" placeholder="西暦(4桁)" maxlength="4" pattern="\d*">
                     </div>
                     <div class="input-col">
-                        <input type="text" id="birth-month" placeholder="月" maxlength="2">
+                        <input type="text" id="birth-month" placeholder="月" maxlength="2" pattern="\d*">
                     </div>
                     <div class="input-col">
-                        <input type="text" id="birth-day" placeholder="日" maxlength="2">
+                        <input type="text" id="birth-day" placeholder="日" maxlength="2" pattern="\d*">
                     </div>
                 </div>
                 <div id="err-birthdate" class="error-message">生年月日を正しい西暦4桁・月・日（半角数字）で入力してください。</div>
@@ -255,9 +255,9 @@
 
 <script>
     // GASで発行したウェブアプリのURLをここに貼り付けてください
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzjxkxStcrVMLpP9V-JOAgQmXFgEYPb90fnBCxeXL9DGLn-hrgWqxSO7xmleTFEz1i8/exec";
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec";
 
-    // 性別のチェックボックスを排他制御（どちらか片方しか選べないようにする）
+    // 性別のチェックボックスを排他制御
     function keepOneGender(checkbox) {
         const checkboxes = document.getElementsByName('gender');
         checkboxes.forEach((item) => {
@@ -265,7 +265,7 @@
         });
     }
 
-    // 全角英数字➔半角英数字
+    // 全角英数字➔半角英数字（数字以外を削除）
     function toHalfWidthNum(str) {
         return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
     }
@@ -277,7 +277,7 @@
         });
     }
 
-    // 全角カタカナ➔半角カタカナ（ズレ修正版）
+    // 全角カタカナ➔半角カタカナ
     function zenkakuToHankakuKana(str) {
         str = hiraganaToKatakana(str);
         const doubleMap = {
@@ -311,10 +311,31 @@
         return str.replace(/[^ｱ-ﾝﾟﾞｧ-ｫｯｬ-ｮｰ\s]/g, '');
     }
 
-    // 生年月日のリアルタイム半角数字変換
-    document.getElementById('birth-year').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
-    document.getElementById('birth-month').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
-    document.getElementById('birth-day').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
+    // 生年月日のリアルタイム文字数制限（キーボード入力時にmaxlengthを超えないように制御）
+    const birthInputs = [
+        { id: 'birth-year', max: 4 },
+        { id: 'birth-month', max: 2 },
+        { id: 'birth-day', max: 2 }
+    ];
+
+    birthInputs.forEach(inputInfo => {
+        const el = document.getElementById(inputInfo.id);
+        
+        // 入力中の文字重複を防ぐため、リアルタイムの置換は行わず、最大文字数の制限のみに絞る
+        el.addEventListener('input', function(e) {
+            if (e.target.value.length > inputInfo.max) {
+                e.target.value = e.target.value.slice(0, inputInfo.max);
+            }
+        });
+
+        // 入力欄からフォーカスが外れた、または決定された瞬間に半角数字へ安全変換
+        el.addEventListener('blur', function(e) {
+            e.target.value = toHalfWidthNum(e.target.value);
+        });
+        el.addEventListener('change', function(e) {
+            e.target.value = toHalfWidthNum(e.target.value);
+        });
+    });
 
     // 氏名欄の変換処理
     const nameInputs = ['last-name', 'first-name'];
@@ -347,9 +368,18 @@
         }
 
         // 3. 生年月日チェック
-        const year = document.getElementById('birth-year').value;
-        const month = document.getElementById('birth-month').value;
-        const day = document.getElementById('birth-day').value;
+        let year = document.getElementById('birth-year').value;
+        let month = document.getElementById('birth-month').value;
+        let day = document.getElementById('birth-day').value;
+
+        // 確認ボタンが押されたときにも、念のため最新の変換をかける
+        year = toHalfWidthNum(year);
+        month = toHalfWidthNum(month);
+        day = toHalfWidthNum(day);
+        document.getElementById('birth-year').value = year;
+        document.getElementById('birth-month').value = month;
+        document.getElementById('birth-day').value = day;
+        
         if(!year || !month || !day || year.length < 4 || parseInt(year) < 1900 || parseInt(month) > 12 || parseInt(day) > 31) {
             document.getElementById('err-birthdate').style.display = 'block';
             isValid = false;
@@ -369,7 +399,7 @@
 
         if(!isValid) return;
 
-        // 確認画面に表示（ユーザーフレンドリーにするため、確認画面では「男性」「女性」の日本語表記にします）
+        // 確認画面に表示
         document.getElementById('conf-vaccine').innerText = checkedVaccines.join(', ');
         document.getElementById('conf-gender').innerText = checkedGenderEl.value;
         document.getElementById('conf-birthdate').innerText = `${year}年 ${month}月 ${day}日`;
@@ -395,14 +425,14 @@
         const month = document.getElementById('birth-month').value.padStart(2, '0');
         const day = document.getElementById('birth-day').value.padStart(2, '0');
         
-        // 性別の値を数値「1」または「2」に変換する
+        // 性別の値を数値に変換
         const genderText = document.querySelector('input[name="gender"]:checked').value;
         const genderCode = (genderText === "男性") ? "1" : "2";
 
         const payload = {
-            token: "MiharaHospitalVaccine2026Key", // 秘密の合言葉（セキュリティ対策）
+            token: "MiharaHospitalVaccine2026Key", 
             vaccines: checkedVaccines,
-            gender: genderCode, // 「1」または「2」を送信
+            gender: genderCode, 
             birthdate: `${year}/${month}/${day}`,
             lastName: document.getElementById('last-name').value,
             firstName: document.getElementById('first-name').value

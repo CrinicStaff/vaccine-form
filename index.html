@@ -177,7 +177,7 @@
                 <div id="err-vaccine" class="error-message">ワクチンを少なくとも1つ選択してください。</div>
             </div>
 
-            <!-- 性別選択欄 -->
+            <!-- 性別選択欄（チェックボックス形式・必須バリデーション付き） -->
             <div class="form-group">
                 <label>性別</label>
                 <div class="gender-row">
@@ -191,6 +191,7 @@
                 <div id="err-gender" class="error-message">性別を選択してください。</div>
             </div>
 
+            <!-- 生年月日入力欄（文字数制限仕様） -->
             <div class="form-group">
                 <label>生年月日</label>
                 <div class="input-row">
@@ -254,10 +255,10 @@
 </div>
 
 <script>
-    // GASで発行したウェブアプリのURLをここに貼り付けてください
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxqflgFIADv3WHYYCNJc8Tye7MMSwOJkM6-BuDqjbKZY-P6px_1G2pcnBqmQO5vmbcH/exec";
+    // ★ GASで発行したウェブアプリのURLをここに貼り付けてください
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec";
 
-    // 性別のチェックボックスを排他制御
+    // 性別のチェックボックスを排他制御（どちらか片方しか選べないようにする）
     function keepOneGender(checkbox) {
         const checkboxes = document.getElementsByName('gender');
         checkboxes.forEach((item) => {
@@ -265,7 +266,7 @@
         });
     }
 
-    // 全角英数字➔半角英数字（数字以外を削除）
+    // 全角英数字➔半角英数字（数字以外を排除）
     function toHalfWidthNum(str) {
         return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
     }
@@ -285,7 +286,7 @@
             "ザ":"ｻﾞ", "ジ":"ｼﾞ", "ズ":"ｽﾞ", "ゼ":"ｾﾞ", "ゾ":"ｿﾞ",
             "ダ":"ﾀﾞ", "ヂ":"ﾁﾞ", "ヅ":"ﾂﾞ", "デ":"ﾃﾞ", "ド":"ﾄﾞ",
             "バ":"ﾊﾞ", "ビ":"ﾋﾞ", "ブ":"ﾌﾞ", "ベ":"ﾍﾞ", "ボ":"ﾎﾞ",
-            "パ":"ﾊﾟ", "ピ":"ﾋﾟ", "プ":"ﾌﾟ", "ペ":"ﾍﾟ", "ポ":"ﾎﾟ",
+            "パ":"ﾊﾟ", "ピ":"ﾋﾟ", "プ":"ﾌﾟ", "ペ":"ﾍﾟ", "ポ":"ﾊﾟ",
             "ヴ":"ｳﾞ"
         };
         for (let key in doubleMap) {
@@ -311,7 +312,7 @@
         return str.replace(/[^ｱ-ﾝﾟﾞｧ-ｫｯｬ-ｮｰ\s]/g, '');
     }
 
-    // 生年月日のリアルタイム文字数制限（キーボード入力時にmaxlengthを超えないように制御）
+    // 生年月日の制御（入力重複バグの解消と文字数制限の適用）
     const birthInputs = [
         { id: 'birth-year', max: 4 },
         { id: 'birth-month', max: 2 },
@@ -321,14 +322,14 @@
     birthInputs.forEach(inputInfo => {
         const el = document.getElementById(inputInfo.id);
         
-        // 入力中の文字重複を防ぐため、リアルタイムの置換は行わず、最大文字数の制限のみに絞る
+        // 入力中の文字重複バグを防ぐため、入力中は文字数の切り落とし制限のみ行う
         el.addEventListener('input', function(e) {
             if (e.target.value.length > inputInfo.max) {
                 e.target.value = e.target.value.slice(0, inputInfo.max);
             }
         });
 
-        // 入力欄からフォーカスが外れた、または決定された瞬間に半角数字へ安全変換
+        // フォーカスが外れた瞬間、または値が確定した瞬間に安全に半角数字へ変換
         el.addEventListener('blur', function(e) {
             e.target.value = toHalfWidthNum(e.target.value);
         });
@@ -337,7 +338,7 @@
         });
     });
 
-    // 氏名欄の変換処理
+    // 氏名欄のフリガナ半角化変換処理
     const nameInputs = ['last-name', 'first-name'];
     nameInputs.forEach(id => {
         const inputEl = document.getElementById(id);
@@ -345,11 +346,11 @@
         inputEl.addEventListener('change', function(e) { e.target.value = zenkakuToHankakuKana(e.target.value); });
     });
 
-    // バリデーションと画面遷移
+    // バリデーションと確認画面への遷移
     function validateAndProceed() {
         let isValid = true;
 
-        // 1. ワクチンチェック
+        // 1. ワクチン選択チェック
         const checkedVaccines = Array.from(document.querySelectorAll('input[name="vaccine"]:checked')).map(el => el.value);
         if(checkedVaccines.length === 0) {
             document.getElementById('err-vaccine').style.display = 'block';
@@ -358,7 +359,7 @@
             document.getElementById('err-vaccine').style.display = 'none';
         }
 
-        // 2. 性別チェック
+        // 2. 性別選択チェック
         const checkedGenderEl = document.querySelector('input[name="gender"]:checked');
         if(!checkedGenderEl) {
             document.getElementById('err-gender').style.display = 'block';
@@ -367,12 +368,12 @@
             document.getElementById('err-gender').style.display = 'none';
         }
 
-        // 3. 生年月日チェック
+        // 3. 生年月日入力チェック
         let year = document.getElementById('birth-year').value;
         let month = document.getElementById('birth-month').value;
         let day = document.getElementById('birth-day').value;
 
-        // 確認ボタンが押されたときにも、念のため最新の変換をかける
+        // 確認ボタン押下時にも最新の半角クレンジングを実行
         year = toHalfWidthNum(year);
         month = toHalfWidthNum(month);
         day = toHalfWidthNum(day);
@@ -387,7 +388,7 @@
             document.getElementById('err-birthdate').style.display = 'none';
         }
 
-        // 4. 氏名チェック
+        // 4. 氏名入力チェック
         const lastName = document.getElementById('last-name').value.trim();
         const firstName = document.getElementById('first-name').value.trim();
         if(!lastName || !firstName) {
@@ -399,7 +400,7 @@
 
         if(!isValid) return;
 
-        // 確認画面に表示
+        // 確認画面へのマッピング（性別はユーザー向けに日本語表記のまま表示）
         document.getElementById('conf-vaccine').innerText = checkedVaccines.join(', ');
         document.getElementById('conf-gender').innerText = checkedGenderEl.value;
         document.getElementById('conf-birthdate').innerText = `${year}年 ${month}月 ${day}日`;
@@ -414,31 +415,29 @@
         document.getElementById('step-input').classList.remove('hidden');
     }
 
-// GASへデータ送信
+    // GASへデータ送信（性別コード化・生年月日ドット区切り・トークン認証対応）
     function submitData() {
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.innerText = "送信中...";
         submitBtn.disabled = true;
 
         const checkedVaccines = Array.from(document.querySelectorAll('input[name="vaccine"]:checked')).map(el => el.value);
-        
-        // 入力された年・月・日を取得
         const year = document.getElementById('birth-year').value;
         const month = document.getElementById('birth-month').value;
         const day = document.getElementById('birth-day').value;
         
-        // ★頭の「0」を排除し、ドット「.」で繋いだ形式（例：1999.1.1）に整形します
+        // ★頭の「0」を排除し、ドット「.」で繋いだデータに整形（例：1999.1.1）
         const formattedBirthdate = `${parseInt(year, 10)}.${parseInt(month, 10)}.${parseInt(day, 10)}`;
         
-        // 性別の値を数値に変換
+        // 性別の値を数値「1」または「2」の半角文字列に変換
         const genderText = document.querySelector('input[name="gender"]:checked').value;
         const genderCode = (genderText === "男性") ? "1" : "2";
 
         const payload = {
-            token: "MiharaHospitalVaccine2026Key", 
+            token: "MiharaHospitalVaccine2026Key", // ★秘密のトークン（GAS側と要一致）
             vaccines: checkedVaccines,
             gender: genderCode, 
-            birthdate: formattedBirthdate, // ★整形した生年月日を送信
+            birthdate: formattedBirthdate, 
             lastName: document.getElementById('last-name').value,
             firstName: document.getElementById('first-name').value
         };
@@ -458,7 +457,7 @@
             submitBtn.innerText = "送信ボタン";
             submitBtn.disabled = false;
         });
-    }}
+    }
 </script>
 </body>
 </html>

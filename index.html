@@ -414,16 +414,21 @@
         document.getElementById('step-input').classList.remove('hidden');
     }
 
-    // GASへデータ送信
+// GASへデータ送信
     function submitData() {
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.innerText = "送信中...";
         submitBtn.disabled = true;
 
         const checkedVaccines = Array.from(document.querySelectorAll('input[name="vaccine"]:checked')).map(el => el.value);
+        
+        // 入力された年・月・日を取得
         const year = document.getElementById('birth-year').value;
-        const month = document.getElementById('birth-month').value.padStart(2, '0');
-        const day = document.getElementById('birth-day').value.padStart(2, '0');
+        const month = document.getElementById('birth-month').value;
+        const day = document.getElementById('birth-day').value;
+        
+        // ★頭の「0」を排除し、ドット「.」で繋いだ形式（例：1999.1.1）に整形します
+        const formattedBirthdate = `${parseInt(year, 10)}.${parseInt(month, 10)}.${parseInt(day, 10)}`;
         
         // 性別の値を数値に変換
         const genderText = document.querySelector('input[name="gender"]:checked').value;
@@ -433,7 +438,7 @@
             token: "MiharaHospitalVaccine2026Key", 
             vaccines: checkedVaccines,
             gender: genderCode, 
-            birthdate: `${year}/${month}/${day}`,
+            birthdate: formattedBirthdate, // ★整形した生年月日を送信
             lastName: document.getElementById('last-name').value,
             firstName: document.getElementById('first-name').value
         };
@@ -453,7 +458,7 @@
             submitBtn.innerText = "送信ボタン";
             submitBtn.disabled = false;
         });
-    }
+    }}
 </script>
 </body>
 </html>

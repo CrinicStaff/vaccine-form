@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>季節性ワクチン事前受付フォーム</title>
     <style>
@@ -359,7 +360,7 @@
         document.getElementById('step-input').classList.remove('hidden');
     }
 
-    // GASへデータ送信
+// HTML側のsubmitData関数の中身を以下のように書き換えます
     function submitData() {
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.innerText = "送信中...";
@@ -371,6 +372,8 @@
         const day = document.getElementById('birth-day').value.padStart(2, '0');
         
         const payload = {
+            // ★ GAS側に設定したのと同じ秘密の鍵を含める
+            token: "MiharaHospitalVaccine2026Key", 
             vaccines: checkedVaccines,
             birthdate: `${year}/${month}/${day}`,
             lastName: document.getElementById('last-name').value,
@@ -388,7 +391,7 @@
             document.getElementById('step-confirm').classList.add('hidden');
             document.getElementById('step-thanks').classList.remove('hidden');
         }).catch(err => {
-            alert("通信エラーが発生しました。時間をおいて再度お試しください。");
+            alert("通信エラーが発生しました。");
             submitBtn.innerText = "送信ボタン";
             submitBtn.disabled = false;
         });

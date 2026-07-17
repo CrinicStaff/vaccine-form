@@ -68,6 +68,14 @@
             font-weight: normal;
             margin-left: 5px;
         }
+        /* 氏名欄の注釈スタイル */
+        .name-note {
+            display: inline-block;
+            font-size: 12px;
+            color: #718096;
+            font-weight: normal;
+            margin-left: 8px;
+        }
         .input-row {
             display: flex;
             gap: 15px;
@@ -181,7 +189,10 @@
             </div>
 
             <div class="form-group">
-                <label>氏名（フリガナ）</label>
+                <label>
+                    氏名（フリガナ）
+                    <span class="name-note">（ひらがな、カタカナで入力して下さい。自動で半角カタカナに変更されます）</span>
+                </label>
                 <div class="input-row">
                     <div class="input-col">
                         <input type="text" id="last-name" placeholder="セイ（姓）">
@@ -190,7 +201,7 @@
                         <input type="text" id="first-name" placeholder="メイ（名）">
                     </div>
                 </div>
-                <div id="err-name" class="error-message">氏名を半角カタカナで入力してください。</div>
+                <div id="err-name" class="error-message">氏名をフリガナ（ひらがな・カタカナ）で入力してください。</div>
             </div>
 
             <button type="button" class="btn" onclick="validateAndProceed()">内容確認ボタン</button>
@@ -224,58 +235,71 @@
 
 <script>
     // GASで発行したウェブアプリのURLをここに貼り付けてください
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby4-mtKvA2EvMm1Qp7H6zUGB8rP-YVAtBBCYS-24CPIRLOzQGhgrgdAKcY6p_9KKo2C/exec";
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec";
 
-    // 全角英数字➔半角英数字、全角カタカナ➔半角カタカナの自動変換処理
+    // 全角英数字➔半角英数字
     function toHalfWidthNum(str) {
         return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
     }
 
-    function toHalfWidthKana(str) {
-        const kanaMap = {
-            'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン': 'ｱｲｳｴｵｶｷｸｹｺｻシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン',
-            'ガギグゲゴザジズゼゾダヂヅデドバビブベボ': 'ｶﾞｷﾞｸﾞｹﾞｺﾞｻﾞｼﾞｽﾞｾﾞｿﾞﾀﾞﾁﾞﾂﾞﾃﾞﾄﾞﾊﾞﾋﾞﾌﾞﾍﾞﾎﾞ',
-            'パピプペポ': 'ﾊﾟﾋﾟﾌﾟﾍﾟﾎﾟ', 'ァィゥェォッャュョ': 'ｧｨｩｪｫｯｬｭｮ', 'ー': 'ｰ', ' ': ' ', ' ': ' '
-        };
-        // 全角カタカナを半角にマッピングする簡易ロジック（利便性のため入力時に自動置換イベントを付与）
-        // 以下のinputイベントでリアルタイム処理を行います
-        return str; 
+    // ひらがな➔全角カタカナ
+    function hiraganaToKatakana(str) {
+        return str.replace(/[ぁ-ん]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) + 0x60);
+        });
     }
 
-// === 修正版：文字変換とフィルタの処理 ===
+    // 全角カタカナ➔半角カタカナ（ズレを完全に修正した1対1マッピング）
+    function zenkakuToHankakuKana(str) {
+        // まず入力をひらがなから全角カタカナに整えます
+        str = hiraganaToKatakana(str);
 
-    // 生年月日のリアルタイム半角数字変換（数字以外をその場で除去）
+        // 濁点・半濁点の2文字に分かれる全角文字を先に処理
+        const doubleMap = {
+            "ガ":"ｶﾞ", "ギ":"ｷﾞ", "グ":"ｸﾞ", "ゲ":"ｹﾞ", "ゴ":"ｺﾞ",
+            "ザ":"ｻﾞ", "ジ":"ｼﾞ", "ズ":"ｽﾞ", "ゼ":"ｾﾞ", "ゾ":"ｿﾞ",
+            "ダ":"ﾀﾞ", "ヂ":"ﾁﾞ", "ヅ":"ﾂﾞ", "デ":"ﾃﾞ", "ド":"ﾄﾞ",
+            "バ":"ﾊﾞ", "ビ":"ﾋﾞ", "ブ":"ﾌﾞ", "ベ":"ﾍﾞ", "ボ":"ﾎﾞ",
+            "パ":"ﾊﾟ", "ピ":"ﾋﾟ", "プ":"ﾌﾟ", "ペ":"ﾍﾟ", "ポ":"ﾎﾟ",
+            "ヴ":"ｳﾞ"
+        };
+        for (let key in doubleMap) {
+            str = str.replace(new RegExp(key, 'g'), doubleMap[key]);
+        }
+
+        // 1文字変換の対比マップ（ズレ防止のためオブジェクトマッピングで安全に処理）
+        const singleMap = {
+            "ア":"ｱ", "イ":"ｲ", "ウ":"ｳ", "エ":"ｴ", "オ":"ｵ",
+            "カ":"ｶ", "キ":"ｷ", "ク":"ｸ", "ケ":"ｹ", "コ":"ｺ",
+            "サ":"ｻ", "シ":"ｼ", "ス":"ｽ", "セ":"ｾ", "ソ":"ｿ",
+            "タ":"ﾀ", "チ":"ﾁ", "ツ":"ﾂ", "テ":"ﾃ", "ト":"ﾄ",
+            "ナ":"ﾅ", "ニ":"ﾆ", "ヌ":"ﾇ", "ネ":"ﾈ", "ノ":"ﾉ",
+            "ハ":"ﾊ", "ヒ":"ﾋ", "フ":"ﾌ", "ヘ":"ﾍ", "ホ":"ﾎ",
+            "マ":"ﾏ", "ミ":"ﾐ", "ム":"ﾑ", "メ":"ﾒ", "モ":"ﾓ",
+            "ヤ":"ﾔ", "ユ":"ﾕ", "ヨ":"ﾖ",
+            "ラ":"ﾗ", "リ":"ﾘ", "ル":"ﾙ", "レ":"ﾚ", "ロ":"ﾛ",
+            "ワ":"ﾜ", "ヲ":"ｦ", "ン":"ﾝ",
+            "ァ":"ｧ", "ィ":"ｨ", "ゥ":"ｩ", "ェ":"ｪ", "ォ":"ｫ",
+            "ッ":"ｯ", "ャ":"ｬ", "ュ":"ｭ", "ョ":"ｮ", "ー":"ｰ"
+        };
+        for (let key in singleMap) {
+            str = str.replace(new RegExp(key, 'g'), singleMap[key]);
+        }
+
+        // 半角カタカナ、濁点・半濁点、長音、および空白以外の「漢字やアルファベット」を除去
+        return str.replace(/[^ｱ-ﾝﾟﾞｧ-ｫｯｬ-ｮｰ\s]/g, '');
+    }
+
+    // 生年月日のリアルタイム半角数字変換
     document.getElementById('birth-year').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
     document.getElementById('birth-month').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
     document.getElementById('birth-day').addEventListener('input', function(e) { e.target.value = toHalfWidthNum(e.target.value); });
 
-    // 全角カナ➔半角カナの変換マップと変換関数
-    function zenkakuToHankakuKana(str) {
-        var zen = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ","ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メモ","ヤ","ユ","ヨ","ラ","リ","ル","レ","ロ","ワ","ヲ","ン","ァ","ィ","ゥ","ェ","ォ","ッ","ャ","ュ","ョ","ー","ガ","ギ","グ","ゲ","ゴ","ザ","ジ","ズ","ゼ","ゾ","ダ","ヂ","ヅ","デ","ド","バ","ビ","ブ","ベ","ボ","パ","ピ","プ","ペ","ポ","ヴ"];
-        var han = ["ｱ","ｲ","ｳ","ｴ","ｵ","ｶ","ｷ","ｸ","ｹ","ｺ","ｻ","ｼ","ｽ","ｾ","ｿ","ﾀ","ﾁ","ﾂ","ｴ","ﾄ","ﾅ","ﾆ","ﾇ","ﾈ","ﾉ","ﾊ","ﾋ","ﾌ","ﾍ","ﾎ","ﾏ","ﾐ","ﾑ","ﾒ","ﾓ","ﾔ","ﾕ","ﾖ","ﾗ","ﾘ","ﾙ","ﾚ","ﾛ","ﾜ","ｦ","ﾝ","ｧ","ｨ","ｩ","ｪ","ｫ","ｯ","ｬ","ｭ","ｮ","ｰ","ｶﾞ","ｷﾞ","ｸﾞ","ｹﾞ","ｺﾞ","ｻﾞ","ｼﾞ","ｽﾞ","ｾﾞ","ｿﾞ","ﾀﾞ","ﾁﾞ","ﾂﾞ","ﾃﾞ","ﾄﾞ","ﾊﾞ","ﾋﾞ","ﾌﾞ","ﾍﾞ","ﾎﾞ","ﾊﾟ","ﾋﾟ","ﾌﾟ","ﾍﾟ","ﾎﾟ","ｳﾞ"];
-        for(let i=0; i<zen.length; i++){
-            let reg = new RegExp(zen[i], 'g');
-            str = str.replace(reg, han[i]);
-        }
-        // ひらがなを全角カタカナに変換してから、さらに半角にする処理も追加（ユーザーがひらがなで打っても大丈夫なように）
-        str = str.replace(/[ぁ-ん]/g, function(s) {
-            return String.fromCharCode(s.charCodeAt(0) + 0x60);
-        });
-        // 再度変換を通して半角カナにし、それ以外の余計な文字（漢字や英字など）を除外
-        for(let i=0; i<zen.length; i++){
-            let reg = new RegExp(zen[i], 'g');
-            str = str.replace(reg, han[i]);
-        }
-        return str.replace(/[^ｱ-ﾝﾟﾞｧ-ｫｯｬ-ｮｰ\s]/g, '');
-    }
-
-    // 氏名欄の制御：入力欄からフォーカスが外れた（blur）とき、または変換が確定（change）したときに一括で半角カナ変換する
+    // 氏名欄：入力欄から外れた(blur)、または確定した(change)タイミングで変換
     const nameInputs = ['last-name', 'first-name'];
     nameInputs.forEach(id => {
         const inputEl = document.getElementById(id);
         
-        // 入力中は一切邪魔をしない
-        // 入力欄から決定・移動したタイミングで綺麗に半角カナ化する
         inputEl.addEventListener('blur', function(e) {
             e.target.value = zenkakuToHankakuKana(e.target.value);
         });
@@ -297,7 +321,7 @@
             document.getElementById('err-vaccine').style.display = 'none';
         }
 
-        // 2. 生年月日チェック (空欄、および4桁未満の西暦エラー)
+        // 2. 生年月日チェック
         const year = document.getElementById('birth-year').value;
         const month = document.getElementById('birth-month').value;
         const day = document.getElementById('birth-day').value;
@@ -309,9 +333,9 @@
             document.getElementById('err-birthdate').style.display = 'none';
         }
 
-        // 3. 氏名チェック (空欄)
-        const lastName = document.getElementById('last-name').value.strip ? document.getElementById('last-name').value.strip() : document.getElementById('last-name').value;
-        const firstName = document.getElementById('first-name').value.strip ? document.getElementById('first-name').value.strip() : document.getElementById('first-name').value;
+        // 3. 氏名チェック
+        const lastName = document.getElementById('last-name').value.trim();
+        const firstName = document.getElementById('first-name').value.trim();
         if(!lastName || !firstName) {
             document.getElementById('err-name').style.display = 'block';
             isValid = false;
@@ -353,16 +377,14 @@
             firstName: document.getElementById('first-name').value
         };
 
-        // 非同期でGoogle Apps Scriptにデータを投げる
         fetch(GAS_WEBAPP_URL, {
             method: "POST",
-            mode: "no-cors", // 隔離・クロスドメイン対策
+            mode: "no-cors",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(payload)
         }).then(() => {
-            // 完了画面へ遷移
             document.getElementById('step-confirm').classList.add('hidden');
             document.getElementById('step-thanks').classList.remove('hidden');
         }).catch(err => {
